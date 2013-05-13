@@ -13,8 +13,9 @@ def spider(client, url, domain_whitelist=None, pool=None, threadpool=None, teste
     pool = pool or Pool() # maximum number of concurrent HTTP requests
     tested = tested or set([url])
 
+    user_agent = {'User-agent': 'Opera/9.80 (Linux; i686; en) Presto/2.12.388 Version/12.14'}
     with timer() as timed:
-        response = requests.get(url)
+        response = requests.get(url, headers=user_agent)
 
     result = dict(
         status_code = response.status_code,
@@ -23,11 +24,22 @@ def spider(client, url, domain_whitelist=None, pool=None, threadpool=None, teste
         url = url,
         duration = timed.result(),
     )
+    content_type = response.headers.get('content-type')
     client.send_result(result)
 
+    if not content_type.startswith('text/html'):
+        return pool
+
     html = threadpool.apply(fromstring, [response.text])
-    for link in html.cssselect('a'):
-        href = link.attrib.get('href').split('#')[0].strip()
+    try:
+        links = html.cssselect('a')
+    except:
+        links = []
+    for link in links:
+        try:
+            href = link.attrib.get('href').split('#')[0].strip()
+        except:
+            href = None
         if not href:
             continue
         url = urljoin(response.url, href)

@@ -9,7 +9,10 @@ class Client(object):
         self.ws = websocket
         self.env = env
     def send(self, message):
-        self.ws.send(json.dumps(message))
+        try:
+            self.ws.send(json.dumps(message))
+        except:
+            pass
     def receive(self):
         return json.loads(self.ws.receive())
     def send_status(self, message):
@@ -43,4 +46,4 @@ def http_handler(env, start_response):
         yield '<h1>Not Found</h1>'
 
 def serve():
-    WSGIServer(('', 8088), application, handler_class=WebSocketHandler).serve_forever()
+    WSGIServer(('127.0.0.1', 8088), application, handler_class=WebSocketHandler).serve_forever()
